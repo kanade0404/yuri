@@ -1,4 +1,5 @@
 from .route import Router
+from .requests import Request
 
 
 class Yuri:
@@ -12,7 +13,8 @@ class Yuri:
         return decorator(callback) if callback else decorator
 
     def __call__(self, env, start_response):
-        method = env['REQUEST_METHOD'].upper()
-        path = env['PATH_INFO'] or '/'
-        callback, kwargs = self.router.match(method, path)
-        return callback(env, start_response, **kwargs)
+        request = Request(env)
+        callback, url_vars = self.router.match(request.method, request.path)
+        response = callback(request, **url_vars)
+        start_response(response.status_code, response.header_list)
+        return response.body
