@@ -1,19 +1,11 @@
 import re
-
-
-def http404(env, start_response):
-    start_response('404 Not Found', [('Content-Type', 'text/plain;charset=UTF-8')])
-    return [b'404 Not Found']
-
-
-def http405(env, start_response):
-    start_response('405 Method Not Allowed', [('Content-type', 'text/plain;charset=UTF-8')])
-    return [b'405 Method Not Allowed']
+from .response import make_redirect_response, http404, http405
 
 
 class Router:
-    def __init__(self):
+    def __init__(self, append_slash=True):
         self.routes = []
+        self.append_slash = append_slash
 
     def add(self, method, path, callback):
         self.routes.append({
@@ -24,11 +16,17 @@ class Router:
         })
 
     def match(self, method, path):
+        if self.append_slash and not path.endswith('/'):
+            def callback(request):
+                return make_redirect_response(request, path + '/')
+            return callback, {}
+
         error_callback = http404
         for r in self.routes:
             matched = r['path_compiled'].match(path)
             if not matched:
                 continue
+
             error_callback = http405
             url_vars = matched.groupdict()
             if method == r['method']:

@@ -18,6 +18,18 @@ class Request:
         return self.environ['REQUEST_METHOD'].upper()
 
     @property
+    def server_protocol(self):
+        return self.environ['SERVER_PROTOCOL']
+
+    @property
+    def url_scheme(self):
+        return self.environ.get('HTTP_X_FORWARDED_PROTO') or self.environ.get('wsgi.url_scheme', 'http')
+
+    @property
+    def host(self):
+        return self.environ.get('HTTP_X_FORWARDED_HOST') or self.environ.get('HTTP_HOST')
+
+    @property
     def form(self):
         form = cgi.FieldStorage(
             fp=self.environ['wsgi.input'],
