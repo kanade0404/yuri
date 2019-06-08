@@ -1,13 +1,18 @@
 import cgi
 import json
-from urllib.parse import parse_qs, urljoin
+import threading
+from urllib.parse import parse_qs
 
 
 class Request:
-    def __init__(self, environ, charset='utf-8'):
-        self.environ = environ
+    def __init__(self, environ=None, charset='utf-8'):
+        self.environ = {} if environ is None else environ
         self._body = None
         self.charset = charset
+        self._forms = None
+
+    def get(self, value, default=None):
+        return self.environ.get(value, default)
 
     @property
     def path(self):
@@ -31,13 +36,14 @@ class Request:
 
     @property
     def form(self):
-        form = cgi.FieldStorage(
-            fp=self.environ['wsgi.input'],
-            environ=self.environ,
-            keep_blank_values=True
-        )
-        params = {k: form[k].value for k in form}
-        return params
+        if self._forms is None:
+            form = cgi.FieldStorage(
+                fp=self.environ['wsgi.input'],
+                environ=self.environ,
+                keep_blank_values=True
+            )
+            self._forms = {k: form[k].value for k in form}
+        return self._forms
 
     @property
     def query(self):
@@ -57,3 +63,41 @@ class Request:
     @property
     def json(self):
         return json.loads(self.body)
+
+    def __getitem__(self, key):
+        return self.environ[key]
+
+    def __delitem__(self, key):
+        self[key] = ''
+        del (self.environ[key])
+
+    def __len__(self):
+        return len(self.environ)
+
+
+def _local_property():
+    ls = threading.local()
+
+    def fget(_):
+        try:
+            return ls.var
+        except AttributeError:
+            raise RuntimeError('Request context not initialized.')
+
+    def fset(_, value):
+        ls.var = value
+
+    def fdel(_):
+        del ls.var
+
+    return property(fget, fset, fdel, 'Thread-local property')
+
+
+class LocalRequest(Request):
+    bind = Request.__init__
+    environ = _local_property()
+    _body = _local_property()
+    _forms = _local_property()
+
+
+request = LocalRequest()

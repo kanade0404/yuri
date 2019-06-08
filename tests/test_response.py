@@ -1,5 +1,5 @@
 from unittest import TestCase
-from yuri.response import Response, TemplateResponse, JSONResponse
+from yuri.responses import Response
 
 
 class ResponseTests(TestCase):
