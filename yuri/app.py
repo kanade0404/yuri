@@ -2,7 +2,7 @@ import os
 import traceback
 from .routes import Router
 from .requests import request
-from .responses import TemplateResponse, HTTPError
+from .responses import HTTPError
 from jinja2 import Environment, FileSystemLoader
 
 

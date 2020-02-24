@@ -4,5 +4,3 @@ class YuriException(Exception):
 
 class RouteError(YuriException):
     pass
-
-

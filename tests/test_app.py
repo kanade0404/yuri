@@ -21,4 +21,3 @@ class AppTests(TestCase):
         def raise500(type_id: int):
             1 / 0
             return Response("Don't reach here")
-
